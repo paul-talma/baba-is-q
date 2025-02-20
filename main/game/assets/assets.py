@@ -98,11 +98,11 @@ class Board:
                     if isinstance(ob, Text):
                         rule_texts = []
                         for dir in [RIGHT, DOWN]:
-                            rule_texts.extend(self._get_rule(ob, (row, tile), dir))
+                            rule_texts.extend(self._get_text_blocks(ob, (row, tile), dir))
                         new_rules = [self._parse_rule(rule_text) for rule_text in rule_texts]
                         rules.extend(new_rules)
 
-    def _get_rule(self, pos, dir):
+    def _get_text_blocks(self, pos, dir):
         """
             recursively checks for text blocks along a given direction
 
@@ -120,11 +120,12 @@ class Board:
         text = []
         for ob in self.board[pos[0]][pos[1]]:
             if isinstance(ob, Text):
+                text.append(ob.text)
                 next_pos = self._vec_add(pos, dir)
-                text.extend(self._get_rule(next_pos, dir))
+                text.extend(self._get_text_blocks(next_pos, dir))
         return text
 
-    def in_bounds(self, pos):
+    def _in_bounds(self, pos):
         return 0 < pos[0] < self.n_rows and 0 < pos[1] < self.n_cols
 
     def _vec_add(self, v1, v2):
