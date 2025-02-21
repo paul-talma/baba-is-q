@@ -126,12 +126,29 @@ class Board:
         return text
 
     def _in_bounds(self, pos):
+        """
+            returns True iff pos is in the bounds of the board
+        """
         return 0 < pos[0] < self.n_rows and 0 < pos[1] < self.n_cols
 
     def _vec_add(self, v1, v2):
+        """
+            performs vector addition
+        """
         return (v1[0] + v2[0], v1[1] + v2[1])
 
-    def _parse_rule(self, rule):
+    def _parse_rule(self, text_blocks):
+        """
+            parses a text block into a rule
+
+            params:
+                text_blocks: a list of strings corresponding to the text
+                    on contiguous text blocks
+
+            returns:
+                tree: a syntax tree representing the structure of the text, or
+                    None if the text does not correspond to a valid rule
+        """
         pass
 
     def update(self, input):
