@@ -84,6 +84,12 @@ class Board:
 
         return board
 
+    def _has_text(self, pos):
+        """
+            checks whether board[pos] contains a text block
+        """
+        return any([isinstance(ob, Text) for ob in self.board[pos[0]][pos[1]]])
+
     def _get_rules(self):
         """
             iterate through board looking for rules
@@ -95,7 +101,7 @@ class Board:
         for row in self.board:
             for tile in row:
                 for ob in tile:
-                    if isinstance(ob, Text):
+                    if self._is_text(ob):
                         rule_texts = []
                         for dir in [RIGHT, DOWN]:
                             rule_texts.extend(self._get_text_blocks(ob, (row, tile), dir))
@@ -104,25 +110,22 @@ class Board:
 
     def _get_text_blocks(self, pos, dir):
         """
-            recursively checks for text blocks along a given direction
+            scans along dir for text blocks
 
             params:
-                ob: text object of the current tile
-                pos: current position of search
-                dir: direction of current search
+                pos: board position
+                dir: search direction
 
             returns:
-                rule text: a list of contiguous text tokens
+                text: list of text strings encountered
         """
-        if not self._in_bounds(pos):
-            return []
-
+        # TODO: handle multiple text objects in same block
         text = []
-        for ob in self.board[pos[0]][pos[1]]:
-            if isinstance(ob, Text):
-                text.append(ob.text)
-                next_pos = self._vec_add(pos, dir)
-                text.extend(self._get_text_blocks(next_pos, dir))
+        while self._in_bounds(pos) and self._has_text(pos):
+            for ob in self.board[pos[0]][pos[1]]:
+                if isinstance(ob, Text):
+                    text.append(ob.text)
+            pos = self._vec_add(pos, dir)
         return text
 
     def _in_bounds(self, pos):
@@ -140,6 +143,34 @@ class Board:
     def _parse_rule(self, text_blocks):
         """
             parses a text block into a rule
+
+            the grammar of the language is specified by the following BNF:
+
+            S: complex_object verb object
+             | complex_object IS action
+
+            object: BABA
+                  | KEKE
+                  | WALL
+                  | FLAG
+                  | ROCK
+                  | WATER
+                  | KEY
+                  | DOOR
+
+            verb: IS
+                | HAS
+                | MAKE
+
+            action: PUSH
+                  | STOP
+                  | YOU
+
+            complex_object: object (AND object)*
+
+
+            note that the grammar for complex objects has been simplified to not
+                include adjectives or modifiers
 
             params:
                 text_blocks: a list of strings corresponding to the text
