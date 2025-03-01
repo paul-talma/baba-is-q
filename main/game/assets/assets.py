@@ -55,6 +55,17 @@ class Key(Object):
         pass
 
 
+class AST:
+    pass
+
+
+class Rule(AST):
+    def __init__(self, complex_object, verb, object):
+        self.complex_object = complex_object
+        self.verb = verb
+        self.object = object
+
+
 class Board:
     def __init__(self, path):
         self.board = self._load_board(path)
@@ -146,8 +157,8 @@ class Board:
 
             the grammar of the language is specified by the following BNF:
 
-            S: complex_object verb object
-             | complex_object IS action
+            RULE: complex_object verb object
+                | complex_object IS action
 
             object: BABA
                   | KEKE
@@ -169,8 +180,8 @@ class Board:
             complex_object: object (AND object)*
 
 
-            note that the grammar for complex objects has been simplified to not
-                include adjectives or modifiers
+            note that the grammar for complex objects has been simplified to
+                exclude adjectives or modifiers
 
             params:
                 text_blocks: a list of strings corresponding to the text
@@ -180,7 +191,9 @@ class Board:
                 tree: a syntax tree representing the structure of the text, or
                     None if the text does not correspond to a valid rule
         """
-        pass
+        rules = []
+
+
 
     def update(self, input):
         pass
