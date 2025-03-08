@@ -1,5 +1,6 @@
 import json
 import utils.utils as utils
+from utils.utils import Parser
 
 type Dir = tuple[int, int]
 type Pos = tuple[int, int]
@@ -25,7 +26,7 @@ WATER = "WATER"
 KEY = "KEY"
 
 
-class Object:
+class GameObject:
     def __init__(self):
         self.pos: Pos
         self.is_push: bool
@@ -34,7 +35,7 @@ class Object:
         self.is_loss: bool
 
 
-class Text(Object):
+class Text(GameObject):
     def __init__(self, text: str):
         self.pushable: bool = True
         self.text: str = text
@@ -42,48 +43,38 @@ class Text(Object):
         self.is_loss = False
 
 
-class Wall(Object):
+class Wall(GameObject):
     def __init__(self):
         pass
 
 
-class Baba(Object):
+class Baba(GameObject):
     def __init__(self):
         pass
 
 
-class Flag(Object):
+class Flag(GameObject):
     def __init__(self):
         pass
 
 
-class Key(Object):
+class Key(GameObject):
     def __init__(self):
         pass
-
-
-class AST:
-    pass
-
-
-class Rule(AST):
-    def __init__(self, complex_object, verb, object):
-        self.complex_object = complex_object
-        self.verb = verb
-        self.object = object
 
 
 class Board:
     def __init__(self, path):
-        self.board: dict[int, dict[int, list[Object | None]]] = self._load_board(path)
+        self.board: dict[int, dict[int, list[GameObject | None]]] = self._load_board(path)
         self.rules = self._get_rules()
-        self.objects: list[Object] = []
-        self.win_objects: list[Object] = []
-        self.loss_objects: list[Object] = []
+        self.objects: list[GameObject] = []
+        self.win_objects: list[GameObject] = []
+        self.loss_objects: list[GameObject] = []
         self.you_pos: Pos
-        self.you_objects: list[Object]
+        self.you_objects: list[GameObject]
         self.n_rows: int = len(self.board)
         self.n_cols: int = len(self.board[0])
+        self.parser: Parser = Parser()
 
     def _load_board(self, path: str):
         """
@@ -165,48 +156,48 @@ class Board:
         """
         return 0 < pos[0] < self.n_rows and 0 < pos[1] < self.n_cols
 
-    def _parse_rule(self, text_blocks):
-        """
-            parses a text block into a rule
-
-            the grammar of the language is specified by the following BNF:
-
-            RULE: complex_object verb object
-                | complex_object IS action
-
-            object: BABA
-                  | KEKE
-                  | WALL
-                  | FLAG
-                  | ROCK
-                  | WATER
-                  | KEY
-                  | DOOR
-
-            verb: IS
-                | HAS
-                | MAKE
-
-            action: PUSH
-                  | STOP
-                  | YOU
-
-            complex_object: object (AND object)*
-
-
-            note that the grammar for complex objects has been simplified to
-                exclude adjectives or modifiers
-
-            params:
-                text_blocks: a list of strings corresponding to the text
-                    on contiguous text blocks
-
-            returns:
-                tree: a syntax tree representing the structure of the text, or
-                    None if the text does not correspond to a valid rule
-        """
-        pass
-
+    # def _parse_rule(self, text_blocks):
+    #     """
+    #         parses a text block into a rule
+    #
+    #         the grammar of the language is specified by the following BNF:
+    #
+    #         RULE: complex_object verb object
+    #             | complex_object IS action
+    #
+    #         object: BABA
+    #               | KEKE
+    #               | WALL
+    #               | FLAG
+    #               | ROCK
+    #               | WATER
+    #               | KEY
+    #               | DOOR
+    #
+    #         verb: IS
+    #             | HAS
+    #             | MAKE
+    #
+    #         action: PUSH
+    #               | STOP
+    #               | YOU
+    #
+    #         complex_object: object (AND object)*
+    #
+    #
+    #         note that the grammar for complex objects has been simplified to
+    #             exclude adjectives or modifiers
+    #
+    #         params:
+    #             text_blocks: a list of strings corresponding to the text
+    #                 on contiguous text blocks
+    #
+    #         returns:
+    #             tree: a syntax tree representing the structure of the text, or
+    #                 None if the text does not correspond to a valid rule
+    #     """
+    #     pass
+    #
     def _update_board(self, dir: Dir):
         """
             updates the position of each YOU object
@@ -215,7 +206,7 @@ class Board:
             if self._can_move(you, dir):
                 self._update_posisition(you, dir)
 
-    def _can_move(self, ob: Object, dir: Dir):
+    def _can_move(self, ob: GameObject, dir: Dir):
         """
             returns true if object can move in direction dir
         """
@@ -234,7 +225,7 @@ class Board:
 
         return True
 
-    def _move(self, ob: Object, dir: Dir):
+    def _move(self, ob: GameObject, dir: Dir):
         """
             update position of object ob in direction dir
             it is assumed that ob can move in dir
@@ -251,7 +242,7 @@ class Board:
                 self._move(o, dir)
         self._shift_object(o, dir)
 
-    def _shift_object(self, ob: Object, dir: Dir):
+    def _shift_object(self, ob: GameObject, dir: Dir):
         """
             move object ob from current state to next state
         """
