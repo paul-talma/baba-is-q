@@ -215,11 +215,11 @@ class Board:
             if self._can_move(you, dir):
                 self._update_posisition(you, dir)
 
-    def _can_move(self, object: Object, dir: Dir):
+    def _can_move(self, ob: Object, dir: Dir):
         """
             returns true if object can move in direction dir
         """
-        curr_pos = object.pos
+        curr_pos = ob.pos
         next_pos = utils.vec_add(curr_pos, dir)
 
         if not self._in_bounds(next_pos):
@@ -234,25 +234,30 @@ class Board:
 
         return True
 
-    def _update_posisition(self, curr_pos: Pos, dir: Dir):
+    def _move(self, ob: Object, dir: Dir):
+        """
+            update position of object ob in direction dir
+            it is assumed that ob can move in dir
+
+            if next tile contains no obstacle, shift object over
+            if it does, recursively move them, then move ob
+        """
+        curr_pos = ob.pos
         next_pos = utils.vec_add(curr_pos, dir)
         next_objects = self._get_objects(next_pos)
 
-        if all([not o.is_push for o in next_objects]):
-            self._move_tile(curr_pos, next_pos)
-            return
+        for o in next_objects:
+            if o.is_push:
+                self._move(o, dir)
+        self._shift_object(o, dir)
 
-        self._update_posisition(next_pos, dir)
-        self._move_tile(curr_pos, next_pos)
+    def _shift_object(self, ob: Object, dir: Dir):
+        """
+            move object ob from current state to next state
+        """
+        curr_pos = ob.pos
+        next_pos = utils.vec_add(curr_pos, dir)
 
-    # TODO: Pick up here
-    def _move_tile(self, curr_pos: Pos, dir: Dir):
-        curr_objects = self._get_objects(curr_pos)
-
-        you_indices = []
-        for id, object in enumerate(curr_objects):
-            if object.is_you:
-                pass
-
-    def update(self, input):
-        pass
+        self.board[curr_pos[0]][curr_pos[1]].remove(ob)
+        self.board[next_pos[0]][next_pos[1]].append(ob)
+        ob.pos = next_pos
