@@ -1,4 +1,5 @@
 import json
+
 import utils.utils as utils
 
 type Dir = tuple[int, int]
@@ -62,17 +63,6 @@ class Key(Object):
         pass
 
 
-class AST:
-    pass
-
-
-class Rule(AST):
-    def __init__(self, complex_object, verb, object):
-        self.complex_object = complex_object
-        self.verb = verb
-        self.object = object
-
-
 class Board:
     def __init__(self, path):
         self.board: dict[int, dict[int, list[Object | None]]] = self._load_board(path)
@@ -87,15 +77,15 @@ class Board:
 
     def _load_board(self, path: str):
         """
-            reads the initial state of the board from a .json file
-            and stores it in a dictionary.
+        reads the initial state of the board from a .json file
+        and stores it in a dictionary.
 
-            params:
-                path: string, path to a .json file of the level
+        params:
+            path: string, path to a .json file of the level
 
-            returns:
-                board: dict of dicts with row and col indices as keys and lists
-                    of objects as values
+        returns:
+            board: dict of dicts with row and col indices as keys and lists
+                of objects as values
         """
         try:
             with open(path, "r") as file:
@@ -111,22 +101,22 @@ class Board:
 
     def _get_objects(self, pos: Pos):
         """
-            returns a list of all objects at a board pos
+        returns a list of all objects at a board pos
         """
         return self.board[pos[0]][pos[1]]
 
     def _has_text(self, pos: Pos):
         """
-            checks whether board[pos] contains a text block
+        checks whether board[pos] contains a text block
         """
         return any([isinstance(ob, Text) for ob in self._get_objects(pos)])
 
     def _get_rules(self):
         """
-            iterate through board looking for rules
+        iterate through board looking for rules
 
-            returns:
-                rules: a list of currently active rules
+        returns:
+            rules: a list of currently active rules
         """
         rules = []
         for row in self.board:
@@ -135,20 +125,24 @@ class Board:
                     if self._is_text(ob):
                         rule_texts = []
                         for dir in [RIGHT, DOWN]:
-                            rule_texts.extend(self._get_text_blocks(ob, (row, tile), dir))
-                        new_rules = [self._parse_rule(rule_text) for rule_text in rule_texts]
+                            rule_texts.extend(
+                                self._get_text_blocks(ob, (row, tile), dir)
+                            )
+                        new_rules = [
+                            self._parse_rule(rule_text) for rule_text in rule_texts
+                        ]
                         rules.extend(new_rules)
 
     def _get_text_blocks(self, pos: Pos, dir: Dir):
         """
-            scans along dir for text blocks
+        scans along dir for text blocks
 
-            params:
-                pos: board position
-                dir: search direction
+        params:
+            pos: board position
+            dir: search direction
 
-            returns:
-                text: list of text strings encountered
+        returns:
+            text: list of text strings encountered
         """
         # TODO: handle multiple text objects in same block
         text_blocks = []
@@ -161,55 +155,13 @@ class Board:
 
     def _in_bounds(self, pos: Pos):
         """
-            returns True iff pos is in the bounds of the board
+        returns True iff pos is in the bounds of the board
         """
         return 0 < pos[0] < self.n_rows and 0 < pos[1] < self.n_cols
 
-    def _parse_rule(self, text_blocks):
-        """
-            parses a text block into a rule
-
-            the grammar of the language is specified by the following BNF:
-
-            RULE: complex_object verb object
-                | complex_object IS action
-
-            object: BABA
-                  | KEKE
-                  | WALL
-                  | FLAG
-                  | ROCK
-                  | WATER
-                  | KEY
-                  | DOOR
-
-            verb: IS
-                | HAS
-                | MAKE
-
-            action: PUSH
-                  | STOP
-                  | YOU
-
-            complex_object: object (AND object)*
-
-
-            note that the grammar for complex objects has been simplified to
-                exclude adjectives or modifiers
-
-            params:
-                text_blocks: a list of strings corresponding to the text
-                    on contiguous text blocks
-
-            returns:
-                tree: a syntax tree representing the structure of the text, or
-                    None if the text does not correspond to a valid rule
-        """
-        pass
-
     def _update_board(self, dir: Dir):
         """
-            updates the position of each YOU object
+        updates the position of each YOU object
         """
         for you in self.you_objects:
             if self._can_move(you, dir):
@@ -217,7 +169,7 @@ class Board:
 
     def _can_move(self, ob: Object, dir: Dir):
         """
-            returns true if object can move in direction dir
+        returns true if object can move in direction dir
         """
         curr_pos = ob.pos
         next_pos = utils.vec_add(curr_pos, dir)
@@ -236,11 +188,11 @@ class Board:
 
     def _move(self, ob: Object, dir: Dir):
         """
-            update position of object ob in direction dir
-            it is assumed that ob can move in dir
+        update position of object ob in direction dir
+        it is assumed that ob can move in dir
 
-            if next tile contains no obstacle, shift object over
-            if it does, recursively move them, then move ob
+        if next tile contains no obstacle, shift object over
+        if it does, recursively move them, then move ob
         """
         curr_pos = ob.pos
         next_pos = utils.vec_add(curr_pos, dir)
@@ -253,7 +205,7 @@ class Board:
 
     def _shift_object(self, ob: Object, dir: Dir):
         """
-            move object ob from current state to next state
+        move object ob from current state to next state
         """
         curr_pos = ob.pos
         next_pos = utils.vec_add(curr_pos, dir)
