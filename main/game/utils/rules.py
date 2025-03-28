@@ -146,6 +146,9 @@ def parse_rule(symbols: list[str]) -> Rule | None:
 
 
 def _is_valid_rule(verb: str, object: str) -> bool:
+    """
+    if the object is an ACTION, check that the verb is IS
+    """
     if type[object] == ACTION and verb != IS:
         return False
     return True

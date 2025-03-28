@@ -1,5 +1,6 @@
 import json
 
+import utils.rules
 import utils.utils as utils
 
 type Dir = tuple[int, int]
@@ -65,17 +66,30 @@ class Key(Object):
 
 class Board:
     def __init__(self, path):
-        self.board: dict[int, dict[int, list[Object | None]]] = self._load_board(path)
+        """
+        main game state
+
+        board is loaded from the given path.
+
+        class attributes:
+            rules: currently active rules
+            objects: existing objects
+            win_objects: objects with property WIN
+            loss_objects: objects with property DEFEAT
+            you_pos: location of YOU objects
+            you_objects: list of YOU objects
+        """
+        self.board: list[list[list[Object]]] = self._load_board(path)
         self.rules = self._get_rules()
         self.objects: list[Object] = []
         self.win_objects: list[Object] = []
         self.loss_objects: list[Object] = []
-        self.you_pos: Pos
+        self.you_pos: list[Pos]
         self.you_objects: list[Object]
         self.n_rows: int = len(self.board)
         self.n_cols: int = len(self.board[0])
 
-    def _load_board(self, path: str):
+    def _load_board(self, path: str) -> list[list[list[Object]]]:
         """
         reads the initial state of the board from a .json file
         and stores it in a dictionary.
@@ -91,51 +105,62 @@ class Board:
             with open(path, "r") as file:
                 board = json.load(file)
 
-        except FileNotFoundError:
-            print("Error: file not found: {e}")
+        except FileNotFoundError as e:
+            print(f"Error: file not found: {e}")
 
-        except json.JSONDecodeError:
-            print("Error: the file contains invalid jason: {e}")
+        except json.JSONDecodeError as e:
+            print(f"Error: the file contains invalid jason: {e}")
 
+        # TODO: need to process tile contents into Objects
         return board
 
-    def _get_objects(self, pos: Pos):
+    def _get_objects(self, pos: Pos) -> list[Object]:
         """
         returns a list of all objects at a board pos
         """
         return self.board[pos[0]][pos[1]]
 
-    def _has_text(self, pos: Pos):
+    def _has_text(self, pos: Pos) -> bool:
         """
         checks whether board[pos] contains a text block
         """
         return any([isinstance(ob, Text) for ob in self._get_objects(pos)])
 
-    def _get_rules(self):
+    def _get_rules(self) -> list[utils.rules.Rule]:
         """
         iterate through board looking for rules
 
         returns:
             rules: a list of currently active rules
         """
-        rules = []
-        for row in self.board:
-            for tile in row:
+        rules: list[utils.rules.Rule] = []
+        for row_id, row in enumerate(self.board):
+            for col_id, tile in enumerate(row):
                 for ob in tile:
-                    if self._is_text(ob):
-                        rule_texts = []
-                        for dir in [RIGHT, DOWN]:
-                            rule_texts.extend(
-                                self._get_text_blocks(ob, (row, tile), dir)
-                            )
-                        new_rules = [
-                            self._parse_rule(rule_text) for rule_text in rule_texts
-                        ]
-                        rules.extend(new_rules)
+                    # if tile contains a text object, scan for rules
+                    if isinstance(ob, Text):
+                        symbol_strings = []
 
-    def _get_text_blocks(self, pos: Pos, dir: Dir):
+                        # retrieve text blocks in both directions
+                        for dir in [RIGHT, DOWN]:
+                            symbol_strings.extend(
+                                self._get_text_blocks((row_id, col_id), dir)
+                            )
+
+                        # parse text sequences of text blocks into rules
+                        new_rules = [
+                            utils.rules.parse_rule(rule_text)
+                            for rule_text in symbol_strings
+                        ]
+                        new_rules = [rule for rule in new_rules if rule is not None]
+
+                        rules.extend(new_rules)
+        return rules
+
+    def _get_text_blocks(self, pos: Pos, dir: Dir) -> list[str]:
         """
-        scans along dir for text blocks
+        scans along dir for text blocks until board edges or cell with
+        no text is encountered
 
         params:
             pos: board position
@@ -145,6 +170,7 @@ class Board:
             text: list of text strings encountered
         """
         # TODO: handle multiple text objects in same block
+        # is this even possible?
         text_blocks = []
         while self._in_bounds(pos) and self._has_text(pos):
             for ob in self._get_objects(pos):
@@ -153,23 +179,29 @@ class Board:
             pos = utils.vec_add(pos, dir)
         return text_blocks
 
-    def _in_bounds(self, pos: Pos):
+    def _in_bounds(self, pos: Pos) -> bool:
         """
         returns True iff pos is in the bounds of the board
         """
         return 0 < pos[0] < self.n_rows and 0 < pos[1] < self.n_cols
 
-    def _update_board(self, dir: Dir):
+    def _process_movements(self, dir: Dir) -> None:
         """
-        updates the position of each YOU object
+        updates the position of each YOU object, as well as any other
+        objects thereby displaced
         """
         for you in self.you_objects:
             if self._can_move(you, dir):
-                self._update_posisition(you, dir)
+                self._move(you, dir)
 
-    def _can_move(self, ob: Object, dir: Dir):
+    def _can_move(self, ob: Object, dir: Dir) -> bool:
         """
         returns true if object can move in direction dir
+        returns False if:
+            object is at edge of map
+            next_pos contains a STOP object
+            next_pos contains a PUSH object that recursively can't move
+        and True otherwise
         """
         curr_pos = ob.pos
         next_pos = utils.vec_add(curr_pos, dir)
@@ -186,10 +218,10 @@ class Board:
 
         return True
 
-    def _move(self, ob: Object, dir: Dir):
+    def _move(self, ob: Object, dir: Dir) -> None:
         """
         update position of object ob in direction dir
-        it is assumed that ob can move in dir
+        it is assumed that ob _can_move in dir
 
         if next tile contains no obstacle, shift object over
         if it does, recursively move them, then move ob
@@ -198,18 +230,23 @@ class Board:
         next_pos = utils.vec_add(curr_pos, dir)
         next_objects = self._get_objects(next_pos)
 
+        # TODO: check this works even if next tile contains multiple PUSH objects
+        # no it doesn't (will move one object two blocks)
         for o in next_objects:
             if o.is_push:
                 self._move(o, dir)
-        self._shift_object(o, dir)
+        self._shift_object(ob, dir)
 
-    def _shift_object(self, ob: Object, dir: Dir):
+    def _shift_object(self, ob: Object, dir: Dir) -> None:
         """
         move object ob from current state to next state
         """
         curr_pos = ob.pos
         next_pos = utils.vec_add(curr_pos, dir)
 
+        # update board
         self.board[curr_pos[0]][curr_pos[1]].remove(ob)
         self.board[next_pos[0]][next_pos[1]].append(ob)
+
+        # update object
         ob.pos = next_pos
