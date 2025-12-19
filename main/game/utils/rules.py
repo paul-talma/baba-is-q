@@ -1,37 +1,37 @@
 # constants
 # types
-OBJECT = "OBJECT"
-VERB = "VERB"
-ACTION = "ACTION"
-CONNECTIVE = "CONNECTIVE"
+OBJECT = 'OBJECT'
+VERB = 'VERB'
+ACTION = 'ACTION'
+CONNECTIVE = 'CONNECTIVE'
 
 # objects
-WALL = "WALL"
-ROCK = "ROCK"
-BABA = "BABA"
-KEKE = "KEKE"
-FLAG = "FLAG"
-DOOR = "DOOR"
-KEY = "KEY"
-WATER = "WATER"
+WALL = 'WALL'
+ROCK = 'ROCK'
+BABA = 'BABA'
+KEKE = 'KEKE'
+FLAG = 'FLAG'
+DOOR = 'DOOR'
+KEY = 'KEY'
+WATER = 'WATER'
 
 
 # verbs
-IS = "IS"
-HAS = "HAS"
-MAKE = "MAKE"
+IS = 'IS'
+HAS = 'HAS'
+MAKE = 'MAKE'
 
 # actions
-YOU = "YOU"
-PUSH = "PUSH"
-WIN = "WIN"
-FLOAT = "FLOAT"
-MELT = "MELT"
-HOT = "HOT"
-SINK = "SINK"
+YOU = 'YOU'
+PUSH = 'PUSH'
+WIN = 'WIN'
+FLOAT = 'FLOAT'
+MELT = 'MELT'
+HOT = 'HOT'
+SINK = 'SINK'
 
 # connectives
-AND = "AND"
+AND = 'AND'
 
 
 class Token:
