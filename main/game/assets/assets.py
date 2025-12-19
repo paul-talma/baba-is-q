@@ -1,7 +1,9 @@
 import json
 
-import utils.rules
-import utils.utils as utils
+import main.game.utils.rules as rls
+
+
+import main.game.utils.utils as utils
 
 type Dir = tuple[int, int]
 type Pos = tuple[int, int]
@@ -15,16 +17,16 @@ RIGHT = (0, 1)
 DIRS = [UP, DOWN, LEFT, RIGHT]
 
 # text
-WALL = "WALL"
-ROCK = "ROCK"
-BABA = "BABA"
-WIN = "WIN"
-PUSH = "PUSH"
-IS = "IS"
-YOU = "YOU"
-FLAG = "FLAG"
-WATER = "WATER"
-KEY = "KEY"
+WALL = 'WALL'
+ROCK = 'ROCK'
+BABA = 'BABA'
+WIN = 'WIN'
+PUSH = 'PUSH'
+IS = 'IS'
+YOU = 'YOU'
+FLAG = 'FLAG'
+WATER = 'WATER'
+KEY = 'KEY'
 
 
 class Object:
@@ -38,10 +40,13 @@ class Object:
 
 class Text(Object):
     def __init__(self, text: str):
-        self.pushable: bool = True
         self.text: str = text
+        self.pushable: bool = True
         self.is_win = False
         self.is_loss = False
+
+    def __str__(self):
+        return self.text[0]
 
 
 class Wall(Object):
@@ -102,14 +107,14 @@ class Board:
                 of objects as values
         """
         try:
-            with open(path, "r") as file:
+            with open(path, 'r') as file:
                 board = json.load(file)
 
         except FileNotFoundError as e:
-            print(f"Error: file not found: {e}")
+            print(f'Error: file not found: {e}')
 
         except json.JSONDecodeError as e:
-            print(f"Error: the file contains invalid jason: {e}")
+            print(f'Error: the file contains invalid jason: {e}')
 
         # TODO: need to process tile contents into Objects
         return board
@@ -126,14 +131,14 @@ class Board:
         """
         return any([isinstance(ob, Text) for ob in self._get_objects(pos)])
 
-    def _get_rules(self) -> list[utils.rules.Rule]:
+    def _get_rules(self) -> list[rls.Rule]:
         """
         iterate through board looking for rules
 
         returns:
             rules: a list of currently active rules
         """
-        rules: list[utils.rules.Rule] = []
+        rules: list[rls.Rule] = []
         for row_id, row in enumerate(self.board):
             for col_id, tile in enumerate(row):
                 for ob in tile:
@@ -149,8 +154,7 @@ class Board:
 
                         # parse text sequences of text blocks into rules
                         new_rules = [
-                            utils.rules.parse_rule(rule_text)
-                            for rule_text in symbol_strings
+                            rls.parse_rule(rule_text) for rule_text in symbol_strings
                         ]
                         new_rules = [rule for rule in new_rules if rule is not None]
 
@@ -230,8 +234,8 @@ class Board:
         next_pos = utils.vec_add(curr_pos, dir)
         next_objects = self._get_objects(next_pos)
 
-        # TODO: check this works even if next tile contains multiple PUSH objects
-        # no it doesn't (will move one object two blocks)
+        # BUG: doesn't work if next tile contains multiple push objects
+        # (will move one object two blocks)
         for o in next_objects:
             if o.is_push:
                 self._move(o, dir)
